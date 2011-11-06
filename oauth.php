@@ -1,7 +1,6 @@
 <?php
 require_once 'config.php';
 define("REDIRECT_URI", "https://" . $_SERVER['SERVER_NAME'] . $_SERVER['PHP_SELF']);
-define("LOGIN_URI", "https://login.salesforce.com");
 
 session_start();
 
