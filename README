@@ -1,3 +1,9 @@
+PREREQUISITES
+    - cURL Support in your PHP
+    - JSON SUpport in your PHP
+    - SSL Support in your Web Server
+
+
 HOW TO INSTALL
     - Make directory "oauth" under your document root.
         $ mkdir [DOCUMENT_ROOT]/oauth
