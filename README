@@ -1,0 +1,27 @@
+HOW TO INSTALL
+    - Make directory "oauth" under your document root.
+        $ mkdir [DOCUMENT_ROOT]/oauth
+
+    - Save oauth.php and config.php in it.
+        $ [DOCUMENT_ROOT]/oauth/oauth.php
+        $ [DOCUMENT_ROOT]/oauth/config.php
+
+    - Create Remote Access record in your Force.com organization. 
+        Navigate to Force.com->[YOUR_NAME]->Setup->Develop->Remote Access and create one.
+
+    - Edit config.php and set CLIENT_ID and CLIENT_SECRET.
+        Navigate to Force.com->[YOUR_NAME]->Setup->Develop->Remote Access->[YOUR_APPLICATION]
+        $ vi [DOCUMENT_ROOT]/oauth/config.php
+
+    - Add folloing lines to the php file which requires authorization. 
+      * Pls noted that you have to change 'Location: oauth/oauth.php' if your php file is located other than top level directory.
+        $ vi [DOCUMENT_ROOT]/index.php
+            <?php
+            session_start();
+            if (!isset($_SESSION['access_token'])) {
+                $_SESSION['oauth_return'] = $_SERVER['PHP_SELF'];
+                header( 'Location: oauth/oauth.php' );
+            }
+
+            [YOUR CODE GOES ON]
+            ?>
