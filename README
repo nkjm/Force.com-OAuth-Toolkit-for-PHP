@@ -5,29 +5,51 @@ PREREQUISITES
 
 
 HOW TO INSTALL
-    - Make directory "oauth" under your document root.
-        $ mkdir [DOCUMENT_ROOT]/oauth
+    Step 1. Include oauth.php in php script which needs authentication.
+        <?php 
+        require_once 'oauth.php';
 
-    - Save oauth.php and config.php in it.
-        $ [DOCUMENT_ROOT]/oauth/oauth.php
-        $ [DOCUMENT_ROOT]/oauth/config.php
+        [YOUR CODE]
+        ?>
 
-    - Create Remote Access record in your Force.com organization. 
-        Navigate to Force.com->[YOUR_NAME]->Setup->Develop->Remote Access and create one.
 
-    - Edit config.php and set CLIENT_ID and CLIENT_SECRET.
-        Navigate to Force.com->[YOUR_NAME]->Setup->Develop->Remote Access->[YOUR_APPLICATION]
-        $ vi [DOCUMENT_ROOT]/oauth/config.php
+    Step 2. Create a new instance of oauth class.
+        <?php
+        require_once 'oauth.php';
+        $oauth = new oauth([CLIENT_ID], [CLIENT_SECRET], [CALLBACK_URL], [LOGIN_URL], [CACHE_DIR]);
 
-    - Add folloing lines to the php file which requires authorization. 
-      * Pls noted that you have to change 'Location: oauth/oauth.php' if your php file is located other than top level directory.
-        $ vi [DOCUMENT_ROOT]/index.php
-            <?php
-            session_start();
-            if (!isset($_SESSION['access_token'])) {
-                $_SESSION['oauth_return'] = $_SERVER['PHP_SELF'];
-                header( 'Location: oauth/oauth.php' );
-            }
+        [YOUR CODE]
+        ?>
 
-            [YOUR CODE GOES ON]
-            ?>
+        * LOGIN_URL and CACHE_DIR are optional.
+        * access token, refresh token and instance url are saved under CACHE_DIR in case of using auth_with_password() method.
+
+
+    Step 3. Execute $oauth->auth_with_code() or $oauth->auth_with_password() depeding on your application.
+
+        If you apply standard web server authetication flow, use auth_with_code() method as follows.
+        This type of flow is the most common when you provide external web service that needs access to Force.com/Database.com
+
+        <?php
+        require_once 'oauth.php';
+        $oauth = new oauth([CLIENT_ID], [CLIENT_SECRET], [CALLBACK_URL], [LOGIN_URL], [CACHE_DIR]);
+        $oauth->auth_with_code();
+
+        [YOUR CODE]
+        ?>
+
+
+        If you apply username/password authetication flow, use auth_with_password() method as follows.
+        This type of flow is used in case you need users access to web contents without authentication while the contents still needs login to Force.com/Database.com.
+
+        <?php
+        require_once 'oauth.php';
+        $oauth = new oauth([CLIENT_ID], [CLIENT_SECRET], [CALLBACK_URL], [LOGIN_URL], [CACHE_DIR]);
+        $oauth->auth_with_password([USERNAME], [PASSWORD]);
+
+        [YOUR CODE]
+        ?>
+
+
+    That's it. Enjoy.
+

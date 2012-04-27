@@ -1,59 +1,155 @@
 <?php
-require_once 'config.php';
-define("REDIRECT_URI", "https://" . $_SERVER['SERVER_NAME'] . $_SERVER['PHP_SELF']);
+class oauth {
+    public $client_id;
+    public $client_secret;
+    public $login_url;
+    public $token_url;
+    public $callback_url;
+    public $access_token;
+    public $refresh_token;
+    public $instance_url;
+    public $cache_dir;
 
-session_start();
+    public function __construct($client_id, $client_secret, $callback_url, $login_url = 'https://login.salesforce.com', $cache_dir = '.'){
+        $this->client_id = $client_id;
+        $this->client_secret = $client_secret;
+        $this->callback_url = $callback_url;
+        $this->login_url = $login_url;
+        $this->token_url = $login_url . "/services/oauth2/token";
+        $this->cache_dir = $cache_dir;
+    }
 
-if (!isset($_GET['code'])){
-    $auth_url = LOGIN_URI . "/services/oauth2/authorize?response_type=code&client_id=" . CLIENT_ID . "&redirect_uri=" . urlencode(REDIRECT_URI);
-    header('Location: ' . $auth_url);
+    public function auth_with_code(){
+        session_start();
+        $this->read_cache_from_session();
+        if (empty($this->access_token) || empty($this->instance_url) || empty($this->refresh_token)){
+            //get access code
+            if (!isset($_GET['code'])){
+                $this->redirect_to_get_access_code();
+            }
+
+            //set user display depending on user agent
+            if ($this->get_user_agent() == 'iPhone' || $this->get_user_agent() == 'iPad'){
+                $display = 'touch';
+            } else {
+                $display = 'page';
+            }
+
+            //get access token
+            $fragment = "grant_type=authorization_code"
+            . "&code=" . $_GET['code']
+            . "&display=" . $display
+            . "&client_id=" . $this->client_id
+            . "&client_secret=" . $this->client_secret
+            . "&redirect_uri=" . urlencode($this->callback_url);
+            $response = $this->send($fragment);
+            if ($response == 'new code required'){
+                $this->redirect_to_get_access_code();
+            }
+            $this->access_token = $response['access_token'];
+            $this->refresh_token = $response['refresh_token'];
+            $this->instance_url = $response['instance_url'];
+            $this->save_to_session();
+        }
+        return TRUE;
+    }
+    public function auth_with_token(){}
+    public function auth_with_password($username, $password, $lifetime = 60){
+        $this->refresh_cache_on_filesystem($lifetime);
+        $this->read_cache_from_filesystem();
+        if (empty($this->access_token) || empty($this->instance_url)){
+            $fragment = "grant_type=password"
+            . "&client_id=" . $this->client_id
+            . "&client_secret=" . $this->client_secret
+            . "&username=" . $username
+            . "&password=" . $password;
+            $response = $this->send($fragment);
+            $this->access_token = $response['access_token'];
+            $this->refresh_token = '';
+            $this->instance_url = $response['instance_url'];
+            $this->save_to_filesystem();
+        }
+        return TRUE;
+    }
+
+    private function get_user_agent(){
+        $f = explode(';', $_SERVER['HTTP_USER_AGENT']);
+        $ff = explode('(', $f[0]);
+        return(trim($ff[1]));
+    }
+
+    private function redirect_to_get_access_code(){
+        $auth_url = $this->login_url . "/services/oauth2/authorize?response_type=code&client_id=" . $this->client_id . "&redirect_uri=" . urlencode($this->callback_url);
+        header('Location: ' . $auth_url);
+    }
+
+    private function redirect_to_get_access_token(){
+        $auth_url = $this->login_url . "/services/oauth2/authorize?response_type=token&client_id=" . $this->client_id . "&redirect_uri=" . urlencode($this->callback_url);
+        header('Location: ' . $auth_url);
+    }
+
+    private function refresh_cache_on_filesystem($lifetime){
+        if (is_file(CACHE_DIR . "/access_token")){
+            $current_time = time();
+            $mtime = filemtime(CACHE_DIR . "/access_token");
+            if (($current_time - $mtime) > $lifetime * 60){
+                unlink(CACHE_DIR . "/access_token");
+            }
+        }
+    }
+
+    private function read_cache_from_filesystem(){
+        $array_cache = array("access_token", "refresh_token", "instance_url");
+        foreach($array_cache as $k => $v){
+            if (is_file(CACHE_DIR . "/" . $v)){
+                $fp = fopen(CACHE_DIR . "/" . $v, "r");
+                $this->$v = fgets($fp);
+                fclose($fp);
+            }
+        }
+    }
+
+    private function read_cache_from_session(){
+        $array_cache = array("access_token", "refresh_token", "instance_url");
+        foreach($array_cache as $k => $v){
+            if (isset($_SESSION[$v])){
+                $this->$v = $_SESSION[$v];
+            }
+        }
+    }
+
+    private function send($fragment){
+        $curl = curl_init($this->token_url);
+        curl_setopt($curl, CURLOPT_HEADER, false);
+        curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($curl, CURLOPT_POST, true);
+        curl_setopt($curl, CURLOPT_POSTFIELDS, $fragment);
+        $response = json_decode(curl_exec($curl), true);
+        $status = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+        if ($status == 400 && $response['error_description'] == 'expired authorization code') {
+            //access code has been expired
+            return('new code required');
+        } elseif ( $status != 200 ) {
+            die("<h1>Curl Error</h1><p>URL : $this->token_url </p><p>Status : $status</p><p>response : error = " . $response['error'] . ", error_description = " . $response['error_description'] . "</p><p>curl_error : " . curl_error($curl) . "</p><p>curl_errno : " . curl_errno($curl) . "</p>");
+        }
+        curl_close($curl);
+        return($response);
+    }
+
+    private function save_to_filesystem(){
+        $array_cache = array("access_token", "refresh_token", "instance_url");
+        foreach($array_cache as $k => $v){
+            $fp = fopen($this->cache_dir . "/" . $v, "w");
+            fwrite($fp, $this->$v);
+            fclose($fp);
+        }
+    }
+
+    private function save_to_session(){
+        $array_cache = array("access_token", "refresh_token", "instance_url");
+        foreach($array_cache as $k => $v){
+            $_SESSION[$v] = $this->$v;
+        }
+    }
 }
-
-$token_url = LOGIN_URI . "/services/oauth2/token";
-$code = $_GET['code'];
-
-if (empty($code)) {
-    die("Error - code parameter missing from request!");
-}
-
-$params = "code=" . $code
-    . "&grant_type=authorization_code"
-    . "&client_id=" . CLIENT_ID
-    . "&client_secret=" . CLIENT_SECRET
-    . "&redirect_uri=" . urlencode(REDIRECT_URI);
-
-$curl = curl_init($token_url);
-curl_setopt($curl, CURLOPT_HEADER, false);
-curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
-curl_setopt($curl, CURLOPT_POST, true);
-curl_setopt($curl, CURLOPT_POSTFIELDS, $params);
-
-$json_response = curl_exec($curl);
-
-$status = curl_getinfo($curl, CURLINFO_HTTP_CODE);
-
-if ( $status != 200 ) {
-    die("Error: call to token URL $token_url failed with status $status, response $json_response, curl_error " . curl_error($curl) . ", curl_errno " . curl_errno($curl));
-}
-
-curl_close($curl);
-
-$response = json_decode($json_response, true);
-
-$access_token = $response['access_token'];
-$instance_url = $response['instance_url'];
-
-if (!isset($access_token) || $access_token == "") {
-    die("Error - access token missing from response!");
-}
-
-if (!isset($instance_url) || $instance_url == "") {
-    die("Error - instance URL missing from response!");
-}
-
-$_SESSION['access_token'] = $access_token;
-$_SESSION['instance_url'] = $instance_url;
-
-header( "Location: " .  $_SESSION['oauth_return'] ) ;
 ?>
-
