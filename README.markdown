@@ -81,3 +81,8 @@ Following is the sample code which describe all the required code to provide web
     curl_close($curl);
     return($response);
     ?>
+
+Learn about OAuth 2.0 in Force.com
+==================================
+Following blog article should be a great reference to understand each type of authentication flow in OAuth 2.0.
+[Digging Deeper into OAuth 2.0 on Force.com](http://wiki.developerforce.com/page/Digging_Deeper_into_OAuth_2.0_on_Force.com)
