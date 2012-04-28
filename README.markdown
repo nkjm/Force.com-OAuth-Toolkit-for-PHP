@@ -75,7 +75,7 @@ Following is the sample code which describe all the required code to provide web
     $response = json_decode(curl_exec($curl), true);
     $status = curl_getinfo($curl, CURLINFO_HTTP_CODE);
     if ( $status != 200 ) {
-        die("<h1>Curl Error</h1><p>URL : $this->token_url </p><p>Status : $status</p><p>response : error = " . $response['error'] . ", error_description = " . $response['error_description'] . "</p><p>curl_error : " . curl_error($curl) . "</p><p>curl_errno : " . curl_errno($curl) . "</p>");
+        die("<h1>Curl Error</h1><p>URL : " . $url . "</p><p>Status : " . $status . "</p><p>response : error = " . $response['error'] . ", error_description = " . $response['error_description'] . "</p><p>curl_error : " . curl_error($curl) . "</p><p>curl_errno : " . curl_errno($curl) . "</p>");
     }
     curl_close($curl);
     return($response);
