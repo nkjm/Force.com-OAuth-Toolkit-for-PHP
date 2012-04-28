@@ -82,6 +82,13 @@ Following is the sample code which describe all the required code to provide web
     return($response);
     ?>
 
+Token Refresh
+=============
+While this toolkit automatically refreshes access token depending of LIFETIME value, you can invoke token refresh manually by executing auth_with_refresh_token() method as follows.
+
+    $oauth->auth_with_refresh_token();
+
+
 Learn about OAuth 2.0 on Force.com
 ==================================
 Following blog article should be a great reference to understand each type of authentication flow in OAuth 2.0.
