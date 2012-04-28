@@ -1,4 +1,9 @@
 <?php
+/*
+ * You can freely use, embed, modify and re-distribute this program. No warranty.
+ * Copyright Kazuki Nakajima <nkjm.kzk@gmail.com>
+ */
+
 class oauth {
     public $client_id;
     public $client_secret;
