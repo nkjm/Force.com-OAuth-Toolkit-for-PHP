@@ -82,7 +82,7 @@ Following is the sample code which describe all the required code to provide web
     return($response);
     ?>
 
-Learn about OAuth 2.0 in Force.com
+Learn about OAuth 2.0 on Force.com
 ==================================
 Following blog article should be a great reference to understand each type of authentication flow in OAuth 2.0.
 
