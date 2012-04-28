@@ -1,5 +1,6 @@
 PREREQUISITES
 ==============
+- Session Support in your PHP
 - cURL Support in your PHP
 - JSON SUpport in your PHP
 - SSL Support in your Web Server
@@ -19,11 +20,11 @@ Step 2. Create a new instance of oauth class.
 
 Step 3. Do OAuth. 
 ------------------------------------------------------------------------------------------------------
-    $oauth->auth_with_code();
-If you apply standard web server authetication flow, you can use auth_with_code() method as follows. This type of flow is appropriate when you provide external web services that need access to Force.com/Database.com.
+    $oauth->auth_with_code([LIFETIME]);
+If you apply standard web server authetication flow, you can use auth_with_code() method. This type of flow is appropriate when you provide external web services that need access to Force.com/Database.com. LIFETIME is minutes to refresh access token. You can omit LIFETIME and then it is set to 60 by default.
 
     $oauth->auth_with_password([USERNAME], [PASSWORD]);
-If you apply username/password authetication flow, use auth_with_password() method as follows. This type of flow is used in case you need users access to web contents without authentication while the contents still need login to Force.com/Database.com.
+If you apply username/password authetication flow, use auth_with_password() method. This type of flow is used in case you need users access to web contents without authentication while the contents still need login to Force.com/Database.com.
 
 Step 4. Create a directory for CACHE_DIR
 ----------------------------------------------------------------

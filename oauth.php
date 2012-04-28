@@ -10,7 +10,7 @@ class oauth {
     public $instance_url;
     public $cache_dir;
 
-    public function __construct($client_id, $client_secret, $callback_url, $login_url = 'https://login.salesforce.com', $cache_dir = '.'){
+    public function __construct($client_id, $client_secret, $callback_url, $login_url = 'https://login.salesforce.com', $cache_dir = 'oauth/cache'){
         $this->client_id = $client_id;
         $this->client_secret = $client_secret;
         $this->callback_url = $callback_url;
@@ -19,9 +19,10 @@ class oauth {
         $this->cache_dir = $cache_dir;
     }
 
-    public function auth_with_code(){
+    public function auth_with_code($lifetime = 60){
         session_start();
         $this->read_cache_from_session();
+        $this->refresh_cache_on_session($lifetime);
         if (empty($this->access_token) || empty($this->instance_url) || empty($this->refresh_token)){
             //get access code
             if (!isset($_GET['code'])){
@@ -53,7 +54,7 @@ class oauth {
         }
         return TRUE;
     }
-    public function auth_with_token(){}
+
     public function auth_with_password($username, $password, $lifetime = 60){
         $this->refresh_cache_on_filesystem($lifetime);
         $this->read_cache_from_filesystem();
@@ -72,6 +73,17 @@ class oauth {
         return TRUE;
     }
 
+    public function auth_with_refresh_token(){
+        $fragment = "grant_type=refresh_token"
+        . "&client_id=" . $this->client_id
+        . "&client_secret=" . $this->client_secret
+        . "&refresh_token=" . $this->refresh_token;
+        $response = $this->send($fragment);
+        $this->access_token = $response['access_token'];
+        $this->save_to_session();
+        return TRUE;
+    }
+
     private function get_user_agent(){
         $f = explode(';', $_SERVER['HTTP_USER_AGENT']);
         $ff = explode('(', $f[0]);
@@ -86,6 +98,15 @@ class oauth {
     private function redirect_to_get_access_token(){
         $auth_url = $this->login_url . "/services/oauth2/authorize?response_type=token&client_id=" . $this->client_id . "&redirect_uri=" . urlencode($this->callback_url);
         header('Location: ' . $auth_url);
+    }
+
+    private function refresh_cache_on_session($lifetime){
+        if (isset($_SESSION['created_at'])){
+            $current_time = time();
+            if (($current_time - $_SESSION['created_at']) > $lifetime * 60){
+                $this->auth_with_refresh_token();
+            }
+        }
     }
 
     private function refresh_cache_on_filesystem($lifetime){
@@ -150,6 +171,7 @@ class oauth {
         foreach($array_cache as $k => $v){
             $_SESSION[$v] = $this->$v;
         }
+        $_SESSION['created_at'] = time();
     }
 }
 ?>
