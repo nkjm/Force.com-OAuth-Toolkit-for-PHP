@@ -20,18 +20,15 @@ Step 2. Create a new instance of oauth class.
 Step 3. Do OAuth. 
 ------------------------------------------------------------------------------------------------------
     $oauth->auth_with_code();
-If you apply standard web server authetication flow, you can use auth_with_code() method as follows.
-This type of flow is appropriate when you provide external web services that need access to Force.com/Database.com.
+If you apply standard web server authetication flow, you can use auth_with_code() method as follows. This type of flow is appropriate when you provide external web services that need access to Force.com/Database.com.
 
     $oauth->auth_with_password([USERNAME], [PASSWORD]);
-If you apply username/password authetication flow, use auth_with_password() method as follows.
-This type of flow is used in case you need users access to web contents without authentication while the contents still need login to Force.com/Database.com.
+If you apply username/password authetication flow, use auth_with_password() method as follows. This type of flow is used in case you need users access to web contents without authentication while the contents still need login to Force.com/Database.com.
 
 Step 4. Create a directory for CACHE_DIR
 ----------------------------------------------------------------
-If you apply username/password authentication flow, Token and Instance URL info will be saved in individual file under the directory which is configured as CACHE_DIR after initial authentication succeeds.
-Default location of CACHE_DIR is current directory.
-UNIX web user must has write permission on this directory or you can set another directory by passing 5th argument in creating $oauth instance as follows.
+If you apply username/password authentication flow, Token and Instance URL info will be saved in individual file under the directory which is configured as CACHE_DIR after initial authentication succeeds. Default location of CACHE_DIR is current directory. UNIX web user must has write permission on this directory or you can set another directory by passing 5th argument in creating $oauth instance as follows.
+
     define('CLIENT_ID', '3MVG9rFJvQRVOvk40dRq5u_ZA0eT2KvZCvZq.XeA1hFtgc3PITGlLMp3V_kKIwtc6IaEGWkIO3cOu0IgVmujh');
     define('CLIENT_SECRET', '1136279981407985294');
     define('CALLBACK_URL', 'https://sugoisurvey.nkjmkzk.net');
@@ -39,8 +36,8 @@ UNIX web user must has write permission on this directory or you can set another
     define('CACHE_DIR', 'oauth/cache');
     $oauth = new oauth(CLIENT_ID, CLIENT_SECRET, CALLBACK_URL, LOGIN_URL, CACHE_DIR);
 
-Cache files are refreshed every 60 minutes by default.
-You can set other value by passing 3rd argument in executing auth_with_password() as follows.
+Cache files are refreshed every 60 minutes by default. You can set other value by passing 3rd argument in executing auth_with_password() as follows.
+
     define('USERNAME', 'nkjm.kzk@gmail.com');
     define('PASSWORD', 'mypassword');
     $oauth->auth_with_password(USERNAME, PASSWORD, 120);
@@ -49,13 +46,15 @@ Step 5. Use Token to access REST Resources.
 -----------------------------------------------
 After auth_with_code() or auth_with_password() successfully executed, $oauth instance has following properties set.
 You can use these values to access to REST Resources.
-    - $oauth->access_token
-    - $oauth->refresh_token
-    - $oauth->instance_url
+
+- $oauth->access_token
+- $oauth->refresh_token
+- $oauth->instance_url
 
 Sample Code
 ===========
 Following is the sample code which describe all the required code to provide web server authentication flow.
+
     <?php
     require_once "oauth.php";
 
