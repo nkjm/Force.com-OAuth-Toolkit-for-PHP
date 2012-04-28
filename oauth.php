@@ -56,9 +56,10 @@ class oauth {
             $response = $this->send($fragment);
             if ($this->error){
                 if ($this->error_msg == 'new code required'){
-                $this->redirect_to_get_access_code();
-            } else {
-                return(FALSE);
+                    $this->redirect_to_get_access_code();
+                } else {
+                    return(FALSE);
+                }
             }
             $this->access_token = $response['access_token'];
             $this->refresh_token = $response['refresh_token'];
@@ -144,7 +145,7 @@ class oauth {
             if (($current_time - $mtime) > $lifetime * 60){
                 if (!unlink($this->cache_dir . "/access_token")){
                     $this->set_error("Failed to unlink " . $this->cache_dir . "/access_token.");
-                    return();
+                    return;
                 }
             }
         }
@@ -157,7 +158,7 @@ class oauth {
                 $fp = fopen($this->cache_dir . "/" . $v, "r");
                 if ($fp == FALSE){
                     $this->set_error("Failed to open " . $this->cache_dir . "/" . $v . " in read mode.");
-                    return();
+                    return;
                 }
                 $this->$v = fgets($fp);
                 fclose($fp);
