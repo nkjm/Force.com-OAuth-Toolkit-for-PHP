@@ -14,6 +14,8 @@ class oauth {
     public $refresh_token;
     public $instance_url;
     public $cache_dir;
+    public $error = FALSE;
+    public $error_msg = array();
 
     public function __construct($client_id, $client_secret, $callback_url, $login_url = 'https://login.salesforce.com', $cache_dir = 'oauth/cache'){
         $this->client_id = $client_id;
@@ -28,6 +30,9 @@ class oauth {
         session_start();
         $this->read_cache_from_session();
         $this->refresh_cache_on_session($lifetime);
+        if ($this->error){
+            return(FALSE);
+        }
         if (empty($this->access_token) || empty($this->instance_url) || empty($this->refresh_token)){
             //get access code
             if (!isset($_GET['code'])){
@@ -49,20 +54,29 @@ class oauth {
             . "&client_secret=" . $this->client_secret
             . "&redirect_uri=" . urlencode($this->callback_url);
             $response = $this->send($fragment);
-            if ($response == 'new code required'){
+            if ($this->error){
+                if ($this->error_msg == 'new code required'){
                 $this->redirect_to_get_access_code();
+            } else {
+                return(FALSE);
             }
             $this->access_token = $response['access_token'];
             $this->refresh_token = $response['refresh_token'];
             $this->instance_url = $response['instance_url'];
             $this->save_to_session();
         }
-        return TRUE;
+        return(TRUE);
     }
 
     public function auth_with_password($username, $password, $lifetime = 60){
         $this->refresh_cache_on_filesystem($lifetime);
+        if ($this->error){
+            return(FALSE);
+        }
         $this->read_cache_from_filesystem();
+        if ($this->error){
+            return(FALSE);
+        }
         if (empty($this->access_token) || empty($this->instance_url)){
             $fragment = "grant_type=password"
             . "&client_id=" . $this->client_id
@@ -70,12 +84,18 @@ class oauth {
             . "&username=" . $username
             . "&password=" . $password;
             $response = $this->send($fragment);
+            if ($this->error){
+                return(FALSE);
+            }
             $this->access_token = $response['access_token'];
             $this->refresh_token = '';
             $this->instance_url = $response['instance_url'];
             $this->save_to_filesystem();
+            if ($this->error){
+                return(FALSE);
+            }
         }
-        return TRUE;
+        return(TRUE);
     }
 
     public function auth_with_refresh_token(){
@@ -84,9 +104,12 @@ class oauth {
         . "&client_secret=" . $this->client_secret
         . "&refresh_token=" . $this->refresh_token;
         $response = $this->send($fragment);
+        if ($this->error){
+            return(FALSE);
+        }
         $this->access_token = $response['access_token'];
         $this->save_to_session();
-        return TRUE;
+        return(TRUE);
     }
 
     private function get_user_agent(){
@@ -115,11 +138,14 @@ class oauth {
     }
 
     private function refresh_cache_on_filesystem($lifetime){
-        if (is_file(CACHE_DIR . "/access_token")){
+        if (is_file($this->cache_dir . "/access_token")){
             $current_time = time();
-            $mtime = filemtime(CACHE_DIR . "/access_token");
+            $mtime = filemtime($this->cache_dir . "/access_token");
             if (($current_time - $mtime) > $lifetime * 60){
-                unlink(CACHE_DIR . "/access_token");
+                if (!unlink($this->cache_dir . "/access_token")){
+                    $this->set_error("Failed to unlink " . $this->cache_dir . "/access_token.");
+                    return();
+                }
             }
         }
     }
@@ -127,8 +153,12 @@ class oauth {
     private function read_cache_from_filesystem(){
         $array_cache = array("access_token", "refresh_token", "instance_url");
         foreach($array_cache as $k => $v){
-            if (is_file(CACHE_DIR . "/" . $v)){
-                $fp = fopen(CACHE_DIR . "/" . $v, "r");
+            if (is_file($this->cache_dir . "/" . $v)){
+                $fp = fopen($this->cache_dir . "/" . $v, "r");
+                if ($fp == FALSE){
+                    $this->set_error("Failed to open " . $this->cache_dir . "/" . $v . " in read mode.");
+                    return();
+                }
                 $this->$v = fgets($fp);
                 fclose($fp);
             }
@@ -154,9 +184,9 @@ class oauth {
         $status = curl_getinfo($curl, CURLINFO_HTTP_CODE);
         if ($status == 400 && $response['error_description'] == 'expired authorization code') {
             //access code has been expired
-            return('new code required');
+            $this->set_error('new code required');
         } elseif ( $status != 200 ) {
-            die("<h1>Curl Error</h1><p>URL : $this->token_url </p><p>Status : $status</p><p>response : error = " . $response['error'] . ", error_description = " . $response['error_description'] . "</p><p>curl_error : " . curl_error($curl) . "</p><p>curl_errno : " . curl_errno($curl) . "</p>");
+            $this->set_error("<h1>Curl Error</h1><p>URL : $this->token_url </p><p>Status : $status</p><p>response : error = " . $response['error'] . ", error_description = " . $response['error_description'] . "</p><p>curl_error : " . curl_error($curl) . "</p><p>curl_errno : " . curl_errno($curl) . "</p>");
         }
         curl_close($curl);
         return($response);
@@ -166,6 +196,10 @@ class oauth {
         $array_cache = array("access_token", "refresh_token", "instance_url");
         foreach($array_cache as $k => $v){
             $fp = fopen($this->cache_dir . "/" . $v, "w");
+            if ($fp == FALSE){
+                $this->set_error("Failed to open " . $this->cache_dir . "/" . $v . " in read/write mode.");
+                return;
+            }
             fwrite($fp, $this->$v);
             fclose($fp);
         }
@@ -177,6 +211,11 @@ class oauth {
             $_SESSION[$v] = $this->$v;
         }
         $_SESSION['created_at'] = time();
+    }
+
+    private function set_error($error_msg){
+        $this->error = TRUE;
+        array_push($this->error, $error_msg);
     }
 }
 ?>
