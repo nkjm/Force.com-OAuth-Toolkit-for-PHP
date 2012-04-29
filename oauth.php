@@ -17,7 +17,7 @@ class oauth {
     public $error = FALSE;
     public $error_msg = array();
 
-    public function __construct($client_id, $client_secret, $callback_url, $login_url = 'https://login.salesforce.com', $cache_dir = 'oauth/cache'){
+    public function __construct($client_id, $client_secret, $callback_url, $login_url = 'https://login.salesforce.com', $cache_dir = '.'){
         $this->client_id = $client_id;
         $this->client_secret = $client_secret;
         $this->callback_url = $callback_url;
