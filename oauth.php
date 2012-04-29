@@ -55,7 +55,7 @@ class oauth {
             . "&redirect_uri=" . urlencode($this->callback_url);
             $response = $this->send($fragment);
             if ($this->error){
-                if ($this->error_msg == 'new code required'){
+                if (array_pop($this->error_msg) == 'new code required'){
                     $this->redirect_to_get_access_code();
                 } else {
                     return(FALSE);
@@ -198,7 +198,7 @@ class oauth {
         foreach($array_cache as $k => $v){
             $fp = fopen($this->cache_dir . "/" . $v, "w");
             if ($fp == FALSE){
-                $this->set_error("Failed to open " . $this->cache_dir . "/" . $v . " in read/write mode.");
+                $this->set_error("Failed to open " . $this->cache_dir . "/" . $v . " in write mode.");
                 return;
             }
             fwrite($fp, $this->$v);
@@ -216,7 +216,15 @@ class oauth {
 
     private function set_error($error_msg){
         $this->error = TRUE;
-        array_push($this->error, $error_msg);
+        array_push($this->error_msg, $error_msg);
+    }
+
+    public function trace_error(){
+        if ($this->error){
+            foreach ($this->error_msg as $k => $v){
+                print '<p>' . $v . '</p>';
+            }
+        }
     }
 }
 ?>
