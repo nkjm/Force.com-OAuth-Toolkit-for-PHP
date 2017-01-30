@@ -83,7 +83,7 @@ class oauth {
             . "&client_id=" . $this->client_id
             . "&client_secret=" . $this->client_secret
             . "&username=" . $username
-            . "&password=" . $password;
+            . "&password=" . urlencode($password);
             $response = $this->send($fragment);
             if ($this->error){
                 return(FALSE);
