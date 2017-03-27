@@ -181,6 +181,7 @@ class oauth {
         curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($curl, CURLOPT_POST, true);
         curl_setopt($curl, CURLOPT_POSTFIELDS, $fragment);
+        curl_setopt($curl, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1_1);
         $response = json_decode(curl_exec($curl), true);
         $status = curl_getinfo($curl, CURLINFO_HTTP_CODE);
         if ($status == 400 && $response['error_description'] == 'expired authorization code') {
