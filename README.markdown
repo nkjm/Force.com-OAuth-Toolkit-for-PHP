@@ -18,7 +18,7 @@ Step 2. Create a new instance of oauth class.
 - LOGIN_URL and CACHE_DIR are optional.
 - access token, refresh token and instance url are saved under CACHE_DIR in case of using auth_with_password() method.
 
-Step 3. Do OAuth. 
+Step 3. Do OAuth.
 ------------------------------------------------------------------------------------------------------
     $oauth->auth_with_code([LIFETIME]);
 If you apply standard web server authetication flow, you can use auth_with_code() method. This type of flow is appropriate when you provide external web services that need access to Force.com/Database.com. LIFETIME is minutes to refresh access token. You can omit LIFETIME and then it is set to 60 by default.
@@ -66,13 +66,14 @@ Following is the sample code which describe all the required code to provide web
 
     $oauth = new oauth(CLIENT_ID, CLIENT_SECRET, CALLBACK_URL);
     $oauth->auth_with_code();
-    
+
     $query = "select name from session__c";
     $url = $oauth->instance_url . "/services/data/v24.0/query?q=" . urlencode($query);
     $curl = curl_init($url);
     curl_setopt($curl, CURLOPT_HEADER, false);
     curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($curl, CURLOPT_HTTPHEADER, array("Authorization: OAuth " . $oauth->access_token));
+    curl_setopt($curl, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1_1);
     $response = json_decode(curl_exec($curl), true);
     $status = curl_getinfo($curl, CURLINFO_HTTP_CODE);
     if ( $status != 200 ) {
